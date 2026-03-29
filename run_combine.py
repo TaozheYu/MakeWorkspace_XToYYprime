@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('-y', '--years', dest='years', action='store', type=str, choices=['2016', '2016APV', '2017', '2018'], default='2017')
 parser.add_argument('-t', '--topology', dest='topology', action='store', type=str, choices=['boosted', 'resolved'], default='resolved')
-parser.add_argument('-rt', '--runtype', dest='runtype', action='store', type=str, choices=['get_limit', 'estimate_bkg'], default='estimate_bkg')
+parser.add_argument('-rt', '--runtype', dest='runtype', action='store', type=str, choices=['limit', 'fit'], default='limit')
 
 
 args = parser.parse_args()
@@ -29,12 +29,12 @@ def main():
   mass_points = [re.search(r'MX\d+', s).group() for s in signal_samples]
   for i, mass_point in enumerate(mass_points): 
     os.chdir(store_path+"/"+signal_samples[i])
-    if runtype == "get_limit":
+    if runtype == "limit":
       os.system(f"combineCards.py HP=datacard_HP_{mass_point}.txt LP=datacard_LP_{mass_point}.txt > datacard_SR_{mass_point}.txt")
       os.system(f"text2workspace.py datacard_SR_{mass_point}.txt -o workspace_SR_{mass_point}.root")
       os.system(f"combine -M AsymptoticLimits workspace_SR_{mass_point}.root -t -1 > combine_result_{mass_point}.txt")
       os.system(f"cat combine_result_{mass_point}.txt")
-    if runtype == "estimate_bkg":
+    if runtype == "fit":
       print(f"start to run the {signal_samples[i]} FitDiagnostics" )
       os.system(f"text2workspace.py datacard_rest_{mass_point}.txt -o workspace_CR.root")
       os.system("combine -M FitDiagnostics workspace_CR.root --saveShapes --saveWithUncertainties --cminDefaultMinimizerStrategy 0 --ignoreCovWarning -n postfit ")
