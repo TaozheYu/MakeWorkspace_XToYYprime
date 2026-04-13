@@ -536,8 +536,221 @@ def Post_Fit_b(Cut,category,var_list,bkg_samples,samples_color,hist1D_names,pdf_
 
      del pad
 
+def plot_MC(store_path,Cut,Variable,year,bkg_samples,signal_samples,samples_color,categories,varname_list,hist_names):
+   CreatDirectory(store_path+"/plots_MC_variable")
+   for category in categories:
+     #print (sample)
+     print (category)
+     old_canvas = ROOT.gROOT.FindObject("canvas")
+     if old_canvas:
+        old_canvas.Close()  
+     canvas = ROOT.TCanvas("canvas", "canvas", 800, 600)
+     hStack = ROOT.THStack()
 
-def plot_prefit(Cut,Variable,bkg_samples,samples_color,categories,varname_list,hist_names):
+     '''
+     c1_1 = ROOT.TPad("c1_1", "newpad", 0.01,0.01,0.99,0.32)
+     c1_1.Draw();
+     c1_1.cd();
+     c1_1.SetTopMargin(0.045);
+     c1_1.SetBottomMargin(0.3);
+     c1_1.SetRightMargin(0.035);
+     c1_1.SetLeftMargin(0.11);
+     
+     gDATA = ROOT.TGraphAsymmErrors(hist_names["JetHT"][category]["nominal"])
+     gDATA.SetLineWidth(2)
+     gDATA.SetLineColor(1)
+     gDATA.SetMarkerColor(1)
+     gDATA.SetMarkerStyle(20)
+     gDATA.SetMarkerSize(1.3)
+
+     hist_names["JetHT"][category]["nominal"].SetLineWidth(2)
+     hist_names["JetHT"][category]["nominal"].SetLineColor(1)
+     hist_names["JetHT"][category]["nominal"].SetMarkerColor(1)
+     hist_names["JetHT"][category]["nominal"].SetMarkerStyle(20)
+     hist_names["JetHT"][category]["nominal"].SetMarkerSize(1.3)
+
+     RATIO2 = hist_names["JetHT"][category]["nominal"].Clone("RATIO2") 
+     '''
+
+     for i, sample in enumerate(bkg_samples):
+       if sample == "XToYYprime_MX3000":
+         continue
+       print (sample)
+       hist_names[sample][category]["nominal"].SetFillColor(samples_color[sample])
+       hist_names[sample][category]["nominal"].SetLineColor(samples_color[sample])
+       if i == 0:
+         hist_bkg = hist_names[sample][category]["nominal"].Clone("hist_total")
+         hStack.Add(hist_names[sample][category]["nominal"])
+       else:
+         hist_bkg.Add(hist_names[sample][category]["nominal"])
+         hStack.Add(hist_names[sample][category]["nominal"])
+    
+     min_x = hist_bkg.GetXaxis().GetXmin()
+     max_x = hist_bkg.GetXaxis().GetXmax()
+     '''
+     n_bins = hist_names[sample][category]["nominal"].GetNbinsX()
+     x = array('d', [])
+     y = array('d', [])
+     #y_up = array('d', [])
+     #y_down = array('d', [])
+     ex = array('d', [])
+     ey_high = array('d', [])
+     ey_low = array('d', [])
+
+     for i in range(1, n_bins + 1):
+       x.append(hist_bkg.GetBinCenter(i))
+       ex.append(hist_bkg.GetBinWidth(i) / 2)
+       RATIO2.SetBinContent(i,1)
+       if (hist_bkg.GetBinContent(i)!=0):
+         y.append(hist_names["JetHT"][category]["nominal"].GetBinContent(i)/hist_bkg.GetBinContent(i))    
+         ey_low.append(math.sqrt(gDATA.GetErrorYlow(i)*gDATA.GetErrorYlow(i))/hist_bkg.GetBinContent(i))
+         ey_high.append(math.sqrt(gDATA.GetErrorYhigh(i)*gDATA.GetErrorYhigh(i))/hist_bkg.GetBinContent(i))
+         RATIO2.SetBinError(i,hist_bkg.GetBinError(i)/hist_bkg.GetBinContent(i))
+       else:
+         y.append(-1)
+         ey_low.append(0)
+         ey_high.append(0)
+
+      
+     RATIO = ROOT.TGraphAsymmErrors(n_bins, x, y, ex, ex, ey_low, ey_high)
+     RATIO.Draw("AE0p")
+     RATIO.SetMarkerColor(1)
+     RATIO.SetMarkerStyle(21)
+     RATIO.SetMarkerSize(1.0)
+     RATIO.SetMaximum(1.3)
+     RATIO.SetMinimum(0.7)
+     RATIO.SetLineColor(1)
+     RATIO.SetLineWidth(2)
+     RATIO.SetTitle("")
+
+     RATIO.GetYaxis().SetTitle("observed/expected")
+     RATIO.GetYaxis().SetNdivisions(505)
+     RATIO.GetYaxis().SetTitleSize(0.09)
+     RATIO.GetYaxis().SetTitleOffset(0.5)
+     RATIO.GetYaxis().SetLabelSize(0.13)
+
+     RATIO.GetXaxis().SetTitle(Variable+" [GeV]")
+     RATIO.GetXaxis().SetTitleSize(0.15)
+     RATIO.GetXaxis().SetTitleOffset(0.9)
+     RATIO.GetXaxis().SetLabelSize(0.13)
+
+     RATIO.GetXaxis().SetRangeUser(min_x,max_x)
+     RATIO2.SetFillStyle(3002)
+     RATIO2.SetFillColor(12)
+     RATIO2.SetLineColor(12)
+     RATIO2.SetMarkerSize(0)
+     RATIO2.Draw("E2same")
+     RATIO.Draw("E0psame")
+
+     line = ROOT.TLine(min_x, 1, max_x, 1)
+     line.SetLineColor(1)
+     line.Draw()
+     '''
+
+     canvas.cd()
+     c1_2 = ROOT.TPad("c1_2", "newpad", 0.01,0.01,0.99,0.99)
+     c1_2.Draw()
+     c1_2.cd()
+     c1_2.SetTopMargin(0.08)
+     c1_2.SetBottomMargin(0.1)
+     c1_2.SetRightMargin(0.035)
+     c1_2.SetLeftMargin(0.11)
+     c1_2.SetLogy()
+     
+     hStack.Draw("histo")
+     hStack.SetMinimum(0.1)
+     hStack.GetYaxis().SetTitle("Events")
+     hStack.GetYaxis().SetTitleOffset(0.9)
+     hStack.GetYaxis().SetTitleSize(0.050)
+     hStack.GetYaxis().SetLabelSize(0.050)
+
+
+     hStack.GetXaxis().SetTitle(Variable+" [GeV]")
+     hStack.GetXaxis().SetTitleOffset(0.85)
+     hStack.GetXaxis().SetTitleSize(0.05)
+     hStack.GetXaxis().SetTitleOffset(0.9)
+     hStack.GetXaxis().SetLabelSize(0.05)
+     hStack.GetXaxis().SetRangeUser(min_x,max_x)
+
+     for i, signal_sample in enumerate(signal_samples):
+       hist_names[signal_sample][category]["nominal"].SetLineColor(samples_color[signal_sample])    
+       hist_names[signal_sample][category]["nominal"].Draw("samehisto");
+     
+     #hist_names["JetHT"][category]["nominal"].Draw("E same")
+     
+     hist_bkg.SetFillStyle(3005)  
+     hist_bkg.SetFillColor(12)   
+     hist_bkg.SetLineColor(12)    
+     hist_bkg.Draw("E2same")
+
+     max_bin = hist_bkg.GetMaximumBin()
+     max_value = hist_bkg.GetBinContent(max_bin)
+
+     hStack.SetMaximum(max_value*10)
+
+     legend = ROOT.TLegend(0.70, 0.65, 0.89, 0.89)
+     legend.SetTextSize(0.025)
+     legend.SetTextFont(62)
+     legend.SetFillColor(0)
+     for i, sample in enumerate(bkg_samples[::-1]):
+       legend.AddEntry(hist_names[sample][category]["nominal"],sample, "F")
+     for i, signal_sample in enumerate(signal_samples[::-1]):
+       legend.AddEntry(hist_names[signal_sample][category]["nominal"],signal_sample, "l")
+     legend.SetBorderSize(0)
+     legend.Draw()
+
+     canvas.cd()
+     pad = ROOT.TPad("pad","pad",0.01,0.01,0.99,0.99)
+     ROOT.gPad.RedrawAxis()
+     channelText = ""
+     channelTextFont   = 42
+     channelTextSize   = 0.060
+     cmsText     = "CMS"
+     cmsTextFont   = 61  # default is helvetic-bold
+     #writeExtraText = true
+     extraText   = "Simulation"
+     extraTextFont = 52  # default is helvetica-italics
+     #text sizes and text offsets with respect to the top frame in unit of the top margin size
+     lumiTextSize     = 0.5
+     lumiTextOffset   = 0.2
+     cmsTextSize      = 0.55
+     cmsTextOffset    = 0.1  # only used in outOfFrame version
+     relPosX    = 0.045
+     relPosY    = 0.035
+     relExtraDY = 1.2
+     # ratio of "CMS" and extra text size
+     extraOverCmsTextSize  = 0.65
+     #lumi_13TeV = "41.5 fb^{-1}"
+     #lumiText += lumi_13TeV
+     lumiText =year+" (13 TeV)"
+     t = pad.GetTopMargin()
+     b = pad.GetBottomMargin()
+     r = pad.GetRightMargin()
+     l = pad.GetLeftMargin()
+     latex = ROOT.TLatex()
+     latex.SetNDC()
+     latex.SetTextAngle(0)
+     latex.SetTextColor(ROOT.kBlack)
+     extraTextSize = extraOverCmsTextSize*cmsTextSize
+     latex.SetTextFont(42)
+     latex.SetTextAlign(31)
+     latex.SetTextSize(lumiTextSize*t)
+     latex.DrawLatex(1-r,0.92,lumiText)
+     latex.SetTextFont(cmsTextFont)
+     latex.SetTextAlign(11)
+     latex.SetTextSize(cmsTextSize*t)
+     latex.DrawLatex(l+0.01, 0.92,cmsText)
+     #latex.DrawLatex(l+0.045, 1-t+lumiTextOffset*t-0.08,cmsText)
+     latex.SetTextFont(extraTextFont)
+     latex.SetTextSize(extraTextSize*t)  
+     latex.DrawLatex(l+0.12, 0.92, extraText)  
+
+     canvas.Draw()
+     canvas.SaveAs(store_path+"/plots_MC_variable/"+Cut+"_"+Variable+"_"+category+"_MC.pdf")
+   ROOT.gDirectory.GetList().Remove(canvas)             
+
+def plot_dataMC(store_path,Cut,Variable,bkg_samples,signal_samples,samples_color,categories,varname_list,hist_names):
+   CreatDirectory(store_path+"/plots_dataMC_variable")
    for category in categories:
      #print (sample)
      print (category)
@@ -662,6 +875,10 @@ def plot_prefit(Cut,Variable,bkg_samples,samples_color,categories,varname_list,h
      hStack.GetXaxis().SetTitle("")
      hStack.GetYaxis().SetTitleOffset(0.80)
      hStack.GetXaxis().SetTitleOffset(0.85)
+
+     for i, signal_sample in enumerate(signal_samples):
+       hist_names[signal_sample][category]["nominal"].SetLineColor(samples_color[signal_sample])    
+       hist_names[signal_sample][category]["nominal"].Draw("samehisto");
      
      hist_names["JetHT"][category]["nominal"].Draw("E same");
      
@@ -681,6 +898,8 @@ def plot_prefit(Cut,Variable,bkg_samples,samples_color,categories,varname_list,h
      legend.SetFillColor(0)
      for i, sample in enumerate(bkg_samples[::-1]):
        legend.AddEntry(hist_names[sample][category]["nominal"],sample, "F")
+     for i, signal_sample in enumerate(signal_samples[::-1]):
+       legend.AddEntry(hist_names[signal_sample][category]["nominal"],signal_sample, "l")
      legend.SetBorderSize(0)
      legend.Draw()
 
@@ -731,7 +950,7 @@ def plot_prefit(Cut,Variable,bkg_samples,samples_color,categories,varname_list,h
      latex.DrawLatex(l+0.12, 0.95, extraText)  
 
      canvas.Draw()
-     canvas.SaveAs("plots_prefit/"+Cut+"_"+Variable+"_"+category+"_prefit.pdf")
+     canvas.SaveAs(store_path+"/plots_dataMC_variable/"+Cut+"_"+Variable+"_"+category+"_dataMC.pdf")
    ROOT.gDirectory.GetList().Remove(canvas)             
 
 
@@ -938,6 +1157,10 @@ def plot_sys(store_path,samples,categories,systematics_names,varname_list,hist1D
      for category in categories:
        for systematic in systematics_names:
          for var in varname_list:
+           print (sample)
+           print (category)
+           print (systematic)
+           print (var)
            if hist1D_names[sample][category][systematic+"Down"][var] == None:
               continue
            print (sample)

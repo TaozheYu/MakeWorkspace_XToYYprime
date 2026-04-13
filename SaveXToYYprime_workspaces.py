@@ -1,6 +1,7 @@
 import sys,math,ctypes,array
 import ROOT
 import os
+import copy
 import matplotlib.pyplot as plt
 from ROOT import gROOT, gPad, gStyle
 from array import array
@@ -32,6 +33,51 @@ Variable = "Mass_3D"
 path_fw = os.environ['CMSSW_BASE']+"/src/MakeWorkspace_XToYYprime/"
 store_path = path_fw +"/"+ year + "_" + topology
 
+# for different topology, we use the different bins
+if topology == "resolved":
+  mj1_bins = mj1_resolved_bins.copy() 
+  mj2_bins = mj2_resolved_bins.copy() 
+  mjj_bins = mjj_resolved_bins.copy() 
+
+  categories = categories_resolved.copy()
+
+  varname_list = varname_resolved_list.copy()
+
+  dir_list          = copy.deepcopy(result_resolved_dict)
+  hist3D_names      = copy.deepcopy(result_resolved_dict)
+  hist_names        = copy.deepcopy(result_resolved_dict)
+  hist_covert3Dto1D = copy.deepcopy(result_resolved_dict)
+  Roodatahist_names = copy.deepcopy(result_resolved_dict)
+  Roodatahist_covert3Dto1D = copy.deepcopy(result_resolved_dict)
+  pdf_names         = copy.deepcopy(result_resolved_dict)
+  pdf_covert3Dto1D  = copy.deepcopy(result_resolved_dict)
+
+  hist1D_names = copy.deepcopy(result_resolved_dict_2)
+  pdf1D_names = copy.deepcopy(result_resolved_dict_2)
+  Roodatahist1D_names = copy.deepcopy(result_resolved_dict_2)
+
+if topology == "boosted":
+  mj1_bins = mj1_boosted_bins.copy() 
+  mj2_bins = mj2_boosted_bins.copy() 
+  mjj_bins = mjj_boosted_bins.copy() 
+
+  categories = categories_boosted.copy()
+
+  varname_list = varname_boosted_list.copy()
+
+  dir_list          = copy.deepcopy(result_boosted_dict)
+  hist3D_names      = copy.deepcopy(result_boosted_dict)
+  hist_names        = copy.deepcopy(result_boosted_dict)
+  hist_covert3Dto1D = copy.deepcopy(result_boosted_dict)
+  Roodatahist_names = copy.deepcopy(result_boosted_dict)
+  Roodatahist_covert3Dto1D = copy.deepcopy(result_boosted_dict)
+  pdf_names         = copy.deepcopy(result_boosted_dict)
+  pdf_covert3Dto1D  = copy.deepcopy(result_boosted_dict)
+
+  hist1D_names = copy.deepcopy(result_boosted_dict_2)
+  pdf1D_names = copy.deepcopy(result_boosted_dict_2)
+  Roodatahist1D_names = copy.deepcopy(result_boosted_dict_2)
+
 if __name__ == "__main__":
 
   os.chdir(path_fw)
@@ -40,6 +86,7 @@ if __name__ == "__main__":
 
   openFile = inputpath + Cut + "_" + Variable + ".root" 
 
+  print (hist1D_names)
   file = ROOT.TFile(openFile)
   for signal_sample in signal_samples:
     signal_path = store_path + "/" + signal_sample
@@ -49,8 +96,13 @@ if __name__ == "__main__":
     print (Yprime_mass)
     Yprime_mass_up   = Yprime_mass*(1+0.3)
     Yprime_mass_down = Yprime_mass*(1-0.3)
-    mj2_bins_reduce = filter_list(mj2_bins,Yprime_mass_down,Yprime_mass_up) 
-    print (mj2_bins_reduce)
+    # for resolved case, the Yprime is reconstructed by two AK4 jets, the mass range is wide, so we should restrict it
+    if topology == "resolved": 
+      mj2_bins_reduce = filter_list(mj2_bins,Yprime_mass_down,Yprime_mass_up) 
+      print (mj2_bins_reduce)
+    # for boosted case, the Yprime is reconstructed by subleading AK8 jet, the mass range is similar with Y, we don't need to restrict
+    if topology == "boosted": 
+      mj2_bins_reduce = mj2_bins.copy() 
     for sample in samples:
       if "XToYYprime" in sample: 
          if sample != signal_sample:
@@ -96,23 +148,23 @@ if __name__ == "__main__":
           Convert_3Dhist_to_1Dhist(sample,category,systematic,mj1_bins,mj2_bins_reduce,mjj_bins,hist3D_names,hist_covert3Dto1D)
  
           #Get the projection of 3D histogram
-          hist1D_names[sample][category][systematic]["fatjet"] = hist3D_names[sample][category][systematic].ProjectionX("hist_"+sample+"_"+category+"_"+systematic+"_mfatjet")
-          hist1D_names[sample][category][systematic]["2jets"] = hist3D_names[sample][category][systematic].ProjectionY("hist_"+sample+"_"+category+"_"+systematic+"_m2jets")
-          hist1D_names[sample][category][systematic]["3jets"] = hist3D_names[sample][category][systematic].ProjectionZ("hist_"+sample+"_"+category+"_"+systematic+"_m3jets")
+          hist1D_names[sample][category][systematic][varname_list[0]] = hist3D_names[sample][category][systematic].ProjectionX("hist_"+sample+"_"+category+"_"+systematic+"_"+varname_list[0])
+          hist1D_names[sample][category][systematic][varname_list[1]] = hist3D_names[sample][category][systematic].ProjectionY("hist_"+sample+"_"+category+"_"+systematic+"_"+varname_list[1])
+          hist1D_names[sample][category][systematic][varname_list[2]] = hist3D_names[sample][category][systematic].ProjectionZ("hist_"+sample+"_"+category+"_"+systematic+"_"+varname_list[2])
  
  
           if systematic == "nominal" and sample == "JetHT":
             Roodatahist_names[sample][category][systematic] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(Mj1, Mj2, Mvv), hist3D_names[sample][category][systematic])
             Roodatahist_covert3Dto1D[sample][category][systematic] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_covert3Dto1D[sample][category][systematic])
-            Roodatahist1D_names[sample][category][systematic]["3jets"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic]["3jets"])
+            Roodatahist1D_names[sample][category][systematic][varname_list[2]] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic][varname_list[2]])
           elif systematic == "nominal" and sample != "JetHT" :
             Roodatahist_names[sample][category][systematic] = ROOT.RooDataHist(sample+"_"+category,sample+"_"+category,ROOT.RooArgList(Mj1, Mj2, Mvv), hist3D_names[sample][category][systematic])
             Roodatahist_covert3Dto1D[sample][category][systematic] = ROOT.RooDataHist(sample+"_"+category,sample+"_"+category,ROOT.RooArgList(x), hist_covert3Dto1D[sample][category][systematic])
-            Roodatahist1D_names[sample][category][systematic]["3jets"] = ROOT.RooDataHist(sample+"_"+category+"_m3jets",sample+"_"+category+"_m3jets",ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic]["3jets"])
+            Roodatahist1D_names[sample][category][systematic][varname_list[2]] = ROOT.RooDataHist(sample+"_"+category+"_"+varname_list[2],sample+"_"+category+"_"+varname_list[2],ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic][varname_list[2]])
           else:
             Roodatahist_names[sample][category][systematic] = ROOT.RooDataHist(sample+"_"+category+"_"+sample+systematic,sample+"_"+category+"_"+sample+systematic,ROOT.RooArgList(Mj1, Mj2, Mvv), hist3D_names[sample][category][systematic])
             Roodatahist_covert3Dto1D[sample][category][systematic] = ROOT.RooDataHist(sample+"_"+category+"_"+sample+systematic,sample+"_"+category+"_"+sample+systematic,ROOT.RooArgList(x), hist_covert3Dto1D[sample][category][systematic])
-            Roodatahist1D_names[sample][category][systematic]["3jets"] = ROOT.RooDataHist(sample+"_"+category+"_m3jets"+"_"+sample+systematic,sample+"_"+category+"_m3jets"+"_"+sample+systematic,ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic]["3jets"])
+            Roodatahist1D_names[sample][category][systematic][varname_list[2]] = ROOT.RooDataHist(sample+"_"+category+"_"+varname_list[2]+"_"+sample+systematic,sample+"_"+category+"_"+varname_list[2]+"_"+sample+systematic,ROOT.RooArgList(Mvv), hist1D_names[sample][category][systematic][varname_list[2]])
            
           # transfer the roodatahist to pdf
           if sample not in ["JetHT"]:
@@ -128,7 +180,7 @@ if __name__ == "__main__":
  
     #plot the nominal and sys up/down 
     #plot_sys(signal_path,bkg_samples,categories,systematics_names,varname_list,hist1D_names) 
-    #plot_sys(signal_path,[signal_sample],categories,systematics_names,varname_list,hist1D_names) 
+    plot_sys(signal_path,[signal_sample],categories,systematics_names,varname_list,hist1D_names) 
  
     #make different generator and shower QCD distribution in the same plot
     #plot_QCD_diff_generator_shower(categories,varname_list,hist1D_names) 
@@ -175,9 +227,9 @@ if __name__ == "__main__":
       Roodatahist_covert3Dto1D["QCD_madgraph_pythia8"][category]["mjetsinvDown"] = ROOT.RooDataHist("QCD_madgraph_pythia8_"+category+"_mjetsinvDown", "QCD_madgraph_pythia8_"+category+"_mjetsinvDown", ROOT.RooArgList(x), hist_covert3Dto1D["QCD_madgraph_pythia8"][category]["mjetsinvDown"])
  
     #Make pesudo data
-    bkg_hist_HP_list   = [hist_covert3Dto1D[sample]["HP"]["nominal"] for sample in bkg_samples]
-    bkg_hist_LP_list   = [hist_covert3Dto1D[sample]["LP"]["nominal"] for sample in bkg_samples] 
-    bkg_hist_rest_list = [hist_covert3Dto1D[sample]["rest"]["nominal"] for sample in bkg_samples] 
+    bkg_hist_HP_list   = [hist_covert3Dto1D[sample][categories[0]]["nominal"] for sample in bkg_samples]
+    bkg_hist_LP_list   = [hist_covert3Dto1D[sample][categories[1]]["nominal"] for sample in bkg_samples] 
+    bkg_hist_rest_list = [hist_covert3Dto1D[sample][categories[2]]["nominal"] for sample in bkg_samples] 
  
     hist_pesudo_data_HP   = MakePesudoData_bkgonly(bkg_hist_HP_list)
     hist_pesudo_data_LP   = MakePesudoData_bkgonly(bkg_hist_LP_list)
@@ -185,17 +237,18 @@ if __name__ == "__main__":
  
  
     #### convert pesudo data hist to Roohist
-    Roodatahist_covert3Dto1D["JetHT"]["HP"]["nominal"] = None 
-    Roodatahist_covert3Dto1D["JetHT"]["LP"]["nominal"] = None 
+    Roodatahist_covert3Dto1D["JetHT"][categories[0]]["nominal"] = None 
+    Roodatahist_covert3Dto1D["JetHT"][categories[1]]["nominal"] = None 
     #Roodatahist_covert3Dto1D["JetHT"]["rest"]["nominal"] = None 
  
-    Roodatahist_covert3Dto1D["JetHT"]["HP"]["nominal"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_pesudo_data_HP)
-    Roodatahist_covert3Dto1D["JetHT"]["LP"]["nominal"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_pesudo_data_LP)
+    Roodatahist_covert3Dto1D["JetHT"][categories[0]]["nominal"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_pesudo_data_HP)
+    Roodatahist_covert3Dto1D["JetHT"][categories[1]]["nominal"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_pesudo_data_LP)
     #Roodatahist_covert3Dto1D["JetHT"]["rest"]["nominal"] = ROOT.RooDataHist("data_obs","data_obs",ROOT.RooArgList(x), hist_pesudo_data_rest)
  
  
     # after HP fit, store the pdf in workspace
     for category in categories: 
+      print(category)
       MakeWorkspace(category,signal_sample,bkg_samples,systematics,Roodatahist_covert3Dto1D)  
       WriteDatacard(category,signal_sample,Roodatahist_covert3Dto1D)
  
